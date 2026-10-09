@@ -84,3 +84,55 @@ Step 7: Cleanup
 3. Terminate saa-alb-ec2-01 and saa-alb-ec2-02.
 4. Delete saa-alb-sg-01 if it is no longer in use.
 Note: ALBs incur charges while provisioned, even if you aren't sending traffic. Clean up promptly.
+
+
+
+SAA-C03 Lab 04: Application Load Balancer – Security Groups and Listener Rules
+Tasks
+1. Restrict EC2 HTTP access to traffic coming only from the ALB security group.
+2. Verify that direct access to EC2 is blocked while ALB access works.
+3. Create a listener rule matching the /error path.
+4. Configure a fixed HTTP 404 response for matching requests.
+5. Test the rule and clean up the resources.
+
+Step 1: Update the EC2 Security Group
+1. Go to EC2 → Security Groups.
+2. Select the security group attached to both EC2 instances: saa-alb-ec2-sg-01.
+3. Under Inbound rules → Edit inbound rules, remove the HTTP rule that allows traffic from 0.0.0.0/0.
+4. Add a new rule:
+   - Type: HTTP
+   - Port: 80
+   - Source: Security group → saa-alb-sg-01
+5. Save the rules.
+Verify: Direct access through the EC2 public IP should fail, while access through the ALB DNS name should continue working.
+
+Step 2: Create an ALB Listener Rule
+1. Go to EC2 → Load Balancers → saa-alb-01.
+2. Select Listeners and rules and open the HTTP listener on port 80.
+3. Choose Add rule.
+4. Configure:
+   - Rule name: saa-alb-rule-01
+   - Condition: Path
+   - Path pattern: /error
+5. Set the action to Return fixed response:
+   - Response code: 404
+   - Response body: Not found, custom error
+   - Content type: text/plain
+6. Set the rule priority to 5.
+7. Save the rule.
+
+Step 3: Test the Listener Rule
+1. Copy the ALB DNS name from its details page.
+2. Open the following URLs in your browser:
+URL	Expected result
+http://<ALB-DNS-NAME>/	Response from an EC2 instance
+http://<ALB-DNS-NAME>/error	HTTP 404 – Not found, custom error
+3. Confirm that the /error request returns the fixed response configured in the listener rule.
+4. Verify that the EC2 instances remain healthy in the target group.
+
+Step 4: Cleanup
+1. Remove the custom listener rule if you want to restore the original behavior.
+2. Restore the EC2 security group's HTTP rule only if needed for your next lab. Prefer keeping HTTP restricted to the ALB security group.
+3. If finishing the previous ALB lab, delete saa-alb-01, saa-alb-tg-01, and the two EC2 instances.
+4. Delete security groups only after confirming they are no longer in use.
+Note: This lab extends Lab 03. Reuse its resources rather than creating duplicates.
